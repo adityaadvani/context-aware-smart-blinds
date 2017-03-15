@@ -1,0 +1,130 @@
+/*
+	Example: A smart blind control FIS (fuzzy inference system)
+*/
+
+// Main function block
+FUNCTION_BLOCK sblind
+
+// Defining variables
+
+	// Define input variables
+	VAR_INPUT
+		temperature	: REAL;
+		ambient		: REAL;
+	END_VAR
+	
+	// Define output variable
+	VAR_OUTPUT
+		blinds 		: REAL;
+	END_VAR
+
+
+
+// Defining FUZZIFY blocks
+
+	// Defining Linguistic Terms for input variable 'temperature'
+	// 'temperature' : {freezing, cold, comfort, warm, hot}
+	FUZZIFY temperature			
+		TERM freezing 	:= (0,0) (0,1) (25,0);
+		TERM cold 		:= (0,0) (25,1) (50,0);
+		TERM comfort 	:= (25,0) (50,1) (75,0);
+		TERM warm 		:= (50,0) (75,1) (100,0);
+		TERM hot 		:= (75,0) (100,1) (100,0);
+	END_FUZZIFY 
+	
+	// Defining Linguistic Terms for input variable 'ambient'
+	// 'ambient' : {dark, dim, bright}
+	FUZZIFY ambient			
+		TERM dark 	:= (0,1) (25,1) (35,0);
+		TERM dim	:= (25,0) (50,1) (75,0);
+		TERM bright := (65,0) (75,1) (100,1);
+	END_FUZZIFY 
+
+
+
+// Defining DEFUZZIFY block
+
+	// Defining Linguistic Terms for output variable 'blinds'
+	// 'blinds' : {open, half, close}
+	DEFUZZIFY blinds
+		TERM open 	:= (0,1) (25,1) (50,0);
+		TERM half 	:= (25,0) (50,1) (75,0);
+		TERM close 	:= (50,0) (75,1) (100,1); 
+		// Use 'Center Of Gravity' defuzzification method
+		METHOD 		: COG;		
+		// Default value is 0 (if no rule activates defuzzifier)
+		DEFAULT 	:= 0;		
+	END_DEFUZZIFY
+
+
+
+// Defining rules in a rule block
+
+	RULEBLOCK rules
+		// Use 'min' for 'and'
+		// Use 'max' for 'or'
+		AND : MIN;			
+		// Use 'min' activation method
+		ACT : MIN;			
+		// Use 'max' accumulation method
+		ACCU : MAX;			
+
+		// Given rules
+		RULE 1 : IF 
+					temperature IS hot 		
+					AND 
+					ambient IS dim 		
+					THEN 
+					blinds IS close;
+					
+		RULE 2 : IF 
+					temperature IS cold 	
+					AND 
+					ambient IS bright 	
+					THEN 
+					blinds IS half; 
+				
+		RULE 3 : IF 
+					temperature IS warm 	
+					AND 
+					ambient IS dim 		
+					THEN 
+					blinds IS half;
+				
+		RULE 4 : IF 
+					temperature IS warm 	
+					AND 
+					ambient IS bright 	
+					THEN 
+					blinds IS close;
+				
+		RULE 5 : IF 
+					ambient IS dark 
+					THEN 
+					blinds IS open;
+				
+		// Added rules			
+		RULE 6 : IF
+					temperature IS hot
+					AND
+					ambient IS bright
+					THEN
+					blinds IS close;
+				
+		RULE 7 : IF
+					temperature IS freezing
+					AND
+					ambient IS dark
+					THEN
+					blinds IS open;
+				
+		RULE 8 : IF
+					temperature IS comfort
+					AND
+					ambient IS dim
+					THEN
+					blinds IS half;
+							
+	END_RULEBLOCK
+
+END_FUNCTION_BLOCK
